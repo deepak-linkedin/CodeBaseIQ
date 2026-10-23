@@ -1,0 +1,16 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-dotenv
+chromadb
+sentence-transformers
+tree-sitter
+tree-sitter-python
+tree-sitter-javascript
+tree-sitter-typescript
+GitPython
+rank-bm25
+httpx
+pytest
+SQLAlchemy>=2.0,<3.0
+psycopg[binary]>=3.2,<4.0
