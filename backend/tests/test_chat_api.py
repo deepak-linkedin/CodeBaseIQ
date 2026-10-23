@@ -7,9 +7,16 @@ from app.api import chat as chat_api
 
 client = TestClient(app)
 
+def enable_legacy_chat_for_test(monkeypatch):
+    """Enable the legacy local-development endpoint for these tests."""
+    monkeypatch.setenv("GOOGLE_CLIENT_ID", "")
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
+
 
 def test_chat_returns_answer_and_sources(monkeypatch, tmp_path):
     """A valid question returns a generated answer and source references."""
+
+    enable_legacy_chat_for_test(monkeypatch)
 
     fake_chunks = [
         {
@@ -51,7 +58,7 @@ def test_chat_returns_answer_and_sources(monkeypatch, tmp_path):
 
 def test_chat_rejects_empty_question(tmp_path):
     """Pydantic rejects an empty question before the endpoint runs."""
-
+    
     response = client.post(
         "/api/chat",
         json={
@@ -64,8 +71,10 @@ def test_chat_rejects_empty_question(tmp_path):
     assert response.status_code == 422
 
 
-def test_chat_rejects_invalid_repository_path(tmp_path):
+def test_chat_rejects_invalid_repository_path(monkeypatch,tmp_path):
     """A path that does not exist returns 404."""
+
+    enable_legacy_chat_for_test(monkeypatch)
 
     missing_path = tmp_path / "does_not_exist"
 
@@ -85,6 +94,8 @@ def test_chat_returns_safe_message_when_no_chunks_found(
     monkeypatch, tmp_path
 ):
     """No retrieved chunks means Gemini is not called."""
+
+    enable_legacy_chat_for_test(monkeypatch)
 
     monkeypatch.setattr(
         chat_api,

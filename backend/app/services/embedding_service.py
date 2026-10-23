@@ -1,9 +1,12 @@
+
 import os
 from functools import lru_cache
+from typing import TYPE_CHECKING
 
-from sentence_transformers import SentenceTransformer
+from app.core.config import DATA_DIR, EMBEDDING_MODEL
 
-from app.core.config import DATA_DIR,EMBEDDING_MODEL
+if TYPE_CHECKING:
+    from sentence_transformers import SentenceTransformer
 
 # Keep downloaded models inside the project data directory.
 os.environ.setdefault(
@@ -11,13 +14,16 @@ os.environ.setdefault(
     str(DATA_DIR / "huggingface"),
 )
 
-@lru_cache(maxsize=1) # prevents repeatedly loading the model into memory.
-def get_embedding_model() -> SentenceTransformer:
+
+@lru_cache(maxsize=1)
+def get_embedding_model() -> "SentenceTransformer":
     """
     Load the embedding model once and reuse it.
 
     The model runs locally after its initial download.
     """
+    from sentence_transformers import SentenceTransformer
+
     return SentenceTransformer(EMBEDDING_MODEL)
 
 
@@ -30,7 +36,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
     embeddings = model.encode(
         texts,
-        normalize_embeddings=True, # normalizes the vectors, which works well with cosine similarity.
+        normalize_embeddings=True,
         convert_to_numpy=True,
         show_progress_bar=False,
     )

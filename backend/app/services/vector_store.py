@@ -198,7 +198,7 @@ def index_chunks(
         get_embedding_model()
     if progress_callback:
         progress_callback("embedding", f"Generating embeddings for {len(documents)} code chunks…", 60)
-    embedding_batch_size = 64
+    embedding_batch_size = 8
     for start in range(0, len(documents), embedding_batch_size):
         end = min(start + embedding_batch_size, len(documents))
         embeddings.extend(embed_texts(documents[start:end]))
