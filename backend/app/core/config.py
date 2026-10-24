@@ -29,7 +29,7 @@ DATA_DIR = Path(
 
 EMBEDDING_MODEL = os.getenv(
     "EMBEDDING_MODEL",
-    "sentence-transformers/all-MiniLM-L6-v2",
+    "gemini-embedding-001",
 )
 
 LLM_PROVIDER = os.getenv("LLM_PROVIDER","local")

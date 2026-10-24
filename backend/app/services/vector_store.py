@@ -5,10 +5,10 @@ from pathlib import Path
 import chromadb
 
 from app.core.config import DATA_DIR
-from app.services.embedding_service import embed_query, embed_texts, get_embedding_model
+from app.services.embedding_service import embed_query, embed_texts
 
 
-COLLECTION_NAME = "codebase_chunks"
+COLLECTION_NAME = "codebase_chunks_gemini_experiment"
 
 
 def get_repository_id(repository_path: str) -> str:
@@ -192,10 +192,12 @@ def index_chunks(
     documents = [chunk["content"] for chunk in chunks]
     embeddings = []
     if progress_callback:
-        progress_callback("embedding", "Loading the local embedding model (the first run may download it)…", 58)
-    # Load once before embedding so the UI can explain a potentially slow first-run download.
-    if documents:
-        get_embedding_model()
+        progress_callback(
+        "embedding",
+        "Preparing hosted Gemini embeddings…",
+        58,
+    )
+
     if progress_callback:
         progress_callback("embedding", f"Generating embeddings for {len(documents)} code chunks…", 60)
     embedding_batch_size = 8

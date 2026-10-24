@@ -1,52 +1,87 @@
 
 import os
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
-from app.core.config import DATA_DIR, EMBEDDING_MODEL
+from google import genai
+from google.genai import types
 
-if TYPE_CHECKING:
-    from sentence_transformers import SentenceTransformer
+from app.core.config import GEMINI_API_KEY, EMBEDDING_MODEL
 
-# Keep downloaded models inside the project data directory.
-os.environ.setdefault(
-    "HF_HOME",
-    str(DATA_DIR / "huggingface"),
-)
+
+EMBEDDING_DIMENSIONS = 768
 
 
 @lru_cache(maxsize=1)
-def get_embedding_model() -> "SentenceTransformer":
-    """
-    Load the embedding model once and reuse it.
+def get_embedding_client():
+    """Create and reuse the Google Gen AI client."""
+    if not GEMINI_API_KEY:
+        raise RuntimeError(
+            "GEMINI_API_KEY is missing. Configure it in the project .env file."
+        )
 
-    The model runs locally after its initial download.
-    """
-    from sentence_transformers import SentenceTransformer
-
-    return SentenceTransformer(EMBEDDING_MODEL)
+    return genai.Client(api_key=GEMINI_API_KEY)
 
 
-def embed_texts(texts: list[str]) -> list[list[float]]:
-    """Convert multiple text chunks into embedding vectors."""
+def _embed(
+    texts: list[str],
+    task_type: str,
+) -> list[list[float]]:
+    """Generate normalized embeddings using Google's hosted API."""
     if not texts:
         return []
 
-    model = get_embedding_model()
+    if any(not isinstance(text, str) or not text.strip() for text in texts):
+        raise ValueError("Embedding inputs must be non-empty strings.")
 
-    embeddings = model.encode(
-        texts,
-        normalize_embeddings=True,
-        convert_to_numpy=True,
-        show_progress_bar=False,
+    client = get_embedding_client()
+
+    response = client.models.embed_content(
+        model=EMBEDDING_MODEL,
+        contents=[text.strip() for text in texts],
+        config=types.EmbedContentConfig(
+            task_type=task_type,
+            output_dimensionality=EMBEDDING_DIMENSIONS,
+        ),
     )
 
-    return embeddings.tolist()
+    if not response.embeddings or len(response.embeddings) != len(texts):
+        raise RuntimeError(
+            "The embedding API returned an unexpected number of vectors."
+        )
+
+    normalized_embeddings = []
+
+    for embedding in response.embeddings:
+        values = list(embedding.values)
+
+        if len(values) != EMBEDDING_DIMENSIONS:
+            raise RuntimeError(
+                f"Expected {EMBEDDING_DIMENSIONS} embedding dimensions, "
+                f"received {len(values)}."
+            )
+
+        # Gemini requires manual normalization when gemini-embedding-001
+        # uses a reduced dimensionality.
+        magnitude = sum(value * value for value in values) ** 0.5
+
+        if magnitude == 0:
+            raise RuntimeError("The embedding API returned a zero vector.")
+
+        normalized_embeddings.append(
+            [value / magnitude for value in values]
+        )
+
+    return normalized_embeddings
+
+
+def embed_texts(texts: list[str]) -> list[list[float]]:
+    """Embed code chunks for storage and retrieval."""
+    return _embed(texts, "RETRIEVAL_DOCUMENT")
 
 
 def embed_query(query: str) -> list[float]:
-    """Convert one user's search query into an embedding vector."""
+    """Embed a natural-language query for code retrieval."""
     if not query or not query.strip():
         raise ValueError("Search query cannot be empty.")
 
-    return embed_texts([query.strip()])[0]
+    return _embed([query.strip()], "CODE_RETRIEVAL_QUERY")[0]

@@ -3,7 +3,6 @@ uvicorn[standard]
 pydantic-settings
 python-dotenv
 chromadb
-sentence-transformers
 tree-sitter
 tree-sitter-python
 tree-sitter-javascript
@@ -14,3 +13,4 @@ httpx
 pytest
 SQLAlchemy>=2.0,<3.0
 psycopg[binary]>=3.2,<4.0
+google-genai
