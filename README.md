@@ -210,10 +210,10 @@ Configure the backend environment variables in Render:
 ```env
 LLM_PROVIDER=gemini
 GEMINI_API_KEY=<Gemini API key>
-GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_MODEL=<GEMINI_MODEL>
 GOOGLE_CLIENT_ID=<Google OAuth Web client ID>
 DATABASE_URL=<PostgreSQL connection string>
-FRONTEND_ORIGIN=https://codebase-iq.vercel.app
+FRONTEND_ORIGIN=<FRONTEND_URL>
 ```
 
 For additional environment and OAuth setup details, see [`DEPLOYMENT.md`](DEPLOYMENT.md).
